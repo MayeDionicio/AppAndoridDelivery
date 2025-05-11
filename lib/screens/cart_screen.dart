@@ -1,7 +1,7 @@
-// cart_screen.dart (fragmento relevante)
 import 'package:flutter/material.dart';
-import 'models/product.dart';
-import 'models/order.dart';
+import '../models/product.dart';
+import '../data/cart.dart';
+import '../services/api_service.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -11,18 +11,46 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final double productPrice = 10.0;
-
   double get totalPrice {
-    return cart.length * productPrice;
+    return cart.fold<double>(
+      0.0,
+          (sum, product) => sum + product.precio * product.quantity,
+    );
+  }
+
+  Future<void> confirmarPedido() async {
+    try {
+      final productos = cart.map((p) => {
+        "productoId": p.productoId,
+        "cantidad": p.quantity,
+      }).toList();
+
+      final pedido = {
+        "productos": productos,
+        "fecha": DateTime.now().toIso8601String(),
+        "total": totalPrice,
+      };
+
+      await ApiService.createOrder(pedido);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Pedido confirmado correctamente")),
+      );
+
+      setState(() {
+        cart.clear();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Error al confirmar pedido: $e")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Carrito de Compras"),
-      ),
+      appBar: AppBar(title: const Text("Carrito de Compras")),
       body: cart.isEmpty
           ? const Center(child: Text("No hay productos en el carrito"))
           : Column(
@@ -33,8 +61,8 @@ class _CartScreenState extends State<CartScreen> {
               itemBuilder: (context, index) {
                 final product = cart[index];
                 return ListTile(
-                  title: Text(product.name),
-                  subtitle: Text(product.description),
+                  title: Text(product.nombre),
+                  subtitle: Text(product.descripcion),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () {
@@ -50,31 +78,18 @@ class _CartScreenState extends State<CartScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              "Total: \$${totalPrice.toStringAsFixed(2)}",
+              "Total: Q${totalPrice.toStringAsFixed(2)}",
               style: const TextStyle(fontSize: 18),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                // Crear el pedido y agregarlo a la lista global de pedidos
-                final newOrder = Order(
-                  products: List.from(cart),
-                  date: DateTime.now(),
-                  total: totalPrice,
-                );
-                orders.add(newOrder);
-                // Mostrar mensaje de confirmación
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Pedido confirmado")),
-                );
-                // Limpiar el carrito
-                setState(() {
-                  cart.clear();
-                });
-              },
-              child: const Text("Confirmar Pedido"),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: confirmarPedido,
+                child: const Text("Confirmar Pedido"),
+              ),
             ),
           ),
           const SizedBox(height: 16),
