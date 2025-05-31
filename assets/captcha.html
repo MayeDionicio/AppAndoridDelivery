@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>reCAPTCHA</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script type="text/javascript">
+        function onSubmit(token) {
+          Recaptcha.postMessage(token);
+        }
+    </script>
+    <style>
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: #ffffff;
+        }
+        .center {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+<div class="center">
+    <form>
+        <div class="g-recaptcha"
+             data-sitekey="6LcJviUrAAAAAHEstPv8jwd3Es1sYUGa14mrHTmN"
+             data-callback="onSubmit"
+             data-size="normal">
+        </div>
+    </form>
+</div>
+</body>
+</html>
